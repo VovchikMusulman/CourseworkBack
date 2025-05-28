@@ -21,22 +21,12 @@ class CategoryController extends Controller
         $request->validate([
             'name' => 'required|string|max:255|unique:categories',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'required|image',
         ]);
 
         $imagePath = null;
-        if ($request->has('images') && is_array($request->images)) {
-            // Удаляем старые изображения
-            foreach ($product->images as $image) {
-                Storage::disk('public')->delete($image);
-            }
-
-            $imagesPaths = [];
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('products', 'public');
-                $imagesPaths[] = $path;
-            }
-            $updateData['images'] = $imagesPaths;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('categories', 'public');
         }
 
         $category = Category::create([
@@ -46,7 +36,6 @@ class CategoryController extends Controller
             'image' => $imagePath,
         ]);
 
-        \Log::info('Данные перед отправкой', ['product' => $product->toArray()]);
         return response()->json($category, 201);
     }
 
@@ -60,7 +49,7 @@ class CategoryController extends Controller
         $request->validate([
             'name' => 'sometimes|string|max:255|unique:categories,name,' . $category->id,
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'image|required',
         ]);
 
         $updateData = $request->only(['name', 'description']);
